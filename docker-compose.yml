@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+
+  nginx:
+    image: nginx:1.25.3-alpine
+    container_name: nginx-1.25.3-alpine
+    ports:
+      - "80:80"
+    depends_on:
+      - php
+    volumes:
+      - ./www:/var/www
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    restart: unless-stopped
+    networks:
+      - app
+
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: php-8.2.12-fpm
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mysql
+    volumes:
+      - ./www:/var/www
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+    restart: unless-stopped
+    networks:
+      - app
+
+  mysql:
+    image: mysql:8.2.0
+    container_name: mysql-8.2.0
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql:/var/lib/mysql
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    restart: unless-stopped
+    networks:
+      - app
+
+networks:
+  app:
+    driver: bridge
